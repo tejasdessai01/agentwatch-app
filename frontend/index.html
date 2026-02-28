@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AgentWatch - Mission Control</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-mono p-4">
+  <div class="container mx-auto">
+    <h1 class="text-3xl font-bold mb-4 text-emerald-400">AgentWatch Terminal v0.1</h1>
+    
+    <div id="status" class="mb-4 text-xs text-gray-500">Connecting to server...</div>
+
+    <!-- Agent Grid -->
+    <div id="agent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Agent cards injected here -->
+    </div>
+  </div>
+
+  <script>
+    const socket = io(); // Connect to current origin (the tunnel URL)
+    const grid = document.getElementById('agent-grid');
+    const statusDiv = document.getElementById('status');
+    const agents = {};
+
+    socket.on('connect', () => {
+      statusDiv.textContent = 'Connected to AgentWatch Server (Port 8080)';
+      statusDiv.classList.add('text-emerald-500');
+    });
+
+    socket.on('disconnect', () => {
+      statusDiv.textContent = 'Disconnected. Retrying...';
+      statusDiv.classList.remove('text-emerald-500');
+    });
+
+    // Initial load
+    socket.on('init', (data) => {
+      Object.keys(data).forEach(id => updateAgent(data[id]));
+    });
+
+    // Real-time update
+    socket.on('agent-update', (agent) => {
+      updateAgent(agent);
+    });
+
+    // Listen for kill signal (to update UI)
+    socket.on('kill-signal', (agentId) => {
+      const card = document.getElementById(`agent-${agentId}`);
+      if (card) {
+        card.classList.add('border-red-600', 'opacity-50');
+        const status = card.querySelector('.status-dot');
+        status.className = 'w-3 h-3 rounded-full bg-red-600 status-dot animate-pulse';
+        const log = card.querySelector('.agent-log');
+        log.textContent = "⚠️ KILLED BY USER COMMAND";
+      }
+    });
+
+    function updateAgent(agent) {
+      let card = document.getElementById(`agent-${agent.id}`);
+      
+      if (!card) {
+        // Create new card
+        card = document.createElement('div');
+        card.id = `agent-${agent.id}`;
+        card.className = "bg-gray-800 border border-gray-700 p-4 rounded-lg shadow-lg transition-all duration-300 hover:border-emerald-500";
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-bold text-white">${agent.name}</h2>
+            <div class="w-3 h-3 rounded-full bg-gray-500 status-dot"></div>
+          </div>
+          <div class="text-xs text-gray-400 mb-2 font-mono">ID: ${agent.id}</div>
+          <div class="h-32 bg-black rounded p-2 overflow-y-auto text-xs font-mono text-green-400 border border-gray-700">
+            <div class="agent-logs">Waiting for logs...</div>
+          </div>
+          <div class="mt-4 flex justify-between items-center">
+            <span class="text-xs text-gray-500">Status: <span class="agent-status capitalize">${agent.status}</span></span>
+            <button onclick="killAgent('${agent.id}')" class="bg-red-900 hover:bg-red-700 text-white text-xs py-1 px-3 rounded uppercase font-bold tracking-wider transition-colors">KILL TASK</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      }
+
+      // Update existing card
+      const statusDot = card.querySelector('.status-dot');
+      const statusText = card.querySelector('.agent-status');
+      const logsContainer = card.querySelector('.agent-logs');
+      
+      // Update status dot color
+      if (agent.status === 'working') statusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse status-dot';
+      else if (agent.status === 'error') statusDot.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-bounce status-dot';
+      else if (agent.status === 'killed') statusDot.className = 'w-3 h-3 rounded-full bg-red-600 status-dot';
+      else statusDot.className = 'w-3 h-3 rounded-full bg-gray-500 status-dot';
+
+      statusText.textContent = agent.status;
+
+      // Update logs (show last 5)
+      const recentLogs = agent.logs.slice(-5).map(l => `[${new Date(l.timestamp).toLocaleTimeString()}] ${l.message}`).join('<br>');
+      logsContainer.innerHTML = recentLogs || "Waiting for logs...";
+      logsContainer.scrollTop = logsContainer.scrollHeight; // Auto-scroll
+    }
+
+    window.killAgent = (id) => {
+      if (confirm(`Are you sure you want to KILL agent ${id}?`)) {
+        socket.emit('kill-agent', id);
+      }
+    };
+  </script>
+</body>
+</html>
