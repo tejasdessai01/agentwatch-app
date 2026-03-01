@@ -1,102 +1,106 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
-const cors = require('cors');
 const path = require('path');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-
 const server = http.createServer(app);
+
+// Serve Frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*", 
     methods: ["GET", "POST"]
   }
 });
 
-// In-memory store for active agents
-let agents = {};
+// Store active agents in memory (for MVP)
+// In production, use Redis/Postgres
+let activeAgents = {};
+const API_KEY = process.env.AGENTWATCH_API_KEY || "test-key-123"; 
 
-// Security: API Key Authentication
-const API_KEY = process.env.API_KEY || 'default-insecure-key'; // MUST set this in production!
+console.log("🔒 ClawSight Server Starting...");
+console.log(`🔑 Master API Key: ${API_KEY}`);
 
+// Middleware for Authentication
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (token === API_KEY) {
     next();
   } else {
-    console.log(`[Security] Rejected connection attempt with invalid token: ${token}`);
-    next(new Error("Authentication error: Invalid API Key"));
+    // console.log(`🚫 Unauthorized connection attempt: ${socket.id}`);
+    next(new Error("Unauthorized"));
   }
 });
 
 io.on('connection', (socket) => {
-  console.log(`[Security] Authenticated client connected: ${socket.id}`);
-  
-  // Send current state on connect
-  socket.emit('init', agents);
+  console.log('✅ Client Connected:', socket.id);
 
-  // Dashboard listens for 'kill' command
-  socket.on('kill-agent', (agentId) => {
-    console.log(`Kill command received for ${agentId}`);
-    io.emit('kill-signal', agentId); // Broadcast to all connected clients (including the agent)
+  // Send initial state
+  socket.emit('init', activeAgents);
+
+  socket.on('register-agent', (agent) => {
+    // console.log(`🤖 Agent Registered: ${agent.name} (${agent.id})`);
+    if (!activeAgents[agent.id]) {
+      activeAgents[agent.id] = { 
+        ...agent, 
+        lastHeartbeat: Date.now(),
+        status: 'idle',
+        logs: [],
+        metrics: { cost: 0, tokens: 0 }
+      };
+    } else {
+      activeAgents[agent.id].lastHeartbeat = Date.now();
+      activeAgents[agent.id].status = agent.status || activeAgents[agent.id].status;
+    }
+    io.emit('agent-update', activeAgents[agent.id]);
   });
 
-  // Agent connects and registers
-  socket.on('register-agent', (data) => {
-    const { id, name, status } = data;
-    agents[id] = { id, name, status, logs: [], lastSeen: Date.now() };
-    io.emit('agent-update', agents[id]);
-    console.log(`Agent registered: ${name} (${id})`);
-  });
-
-  // Agent sends logs/status
   socket.on('agent-log', (data) => {
-    const { id, message, status, metrics } = data;
-    if (agents[id]) {
-      agents[id].status = status || agents[id].status;
-      if (message) agents[id].logs.push({ timestamp: Date.now(), message });
-      if (metrics) agents[id].metrics = { ...agents[id].metrics, ...metrics }; // Merge metrics
-      agents[id].lastSeen = Date.now();
-      // Keep logs manageable
-      if (agents[id].logs.length > 50) agents[id].logs.shift();
-      
-      io.emit('agent-update', agents[id]);
+    // data: { id, message, status, metrics }
+    if (!activeAgents[data.id]) return;
+
+    const agent = activeAgents[data.id];
+    agent.lastHeartbeat = Date.now();
+    agent.status = data.status || agent.status;
+    
+    // Append log (keep last 50)
+    if (data.message) {
+      agent.logs.push({ timestamp: Date.now(), message: data.message });
+      if (agent.logs.length > 50) agent.logs.shift();
+    }
+
+    // Update metrics (cumulative)
+    if (data.metrics) {
+      // If client sends absolute value, use it. If not, handle delta logic on client side.
+      // For now, we assume client sends total or update.
+      // To support simple "add 5 tokens", we'd need logic here.
+      // But our stress test handles accumulation.
+      agent.metrics = { ...agent.metrics, ...data.metrics };
+    }
+
+    io.emit('agent-update', agent);
+  });
+
+  socket.on('kill-agent', (agentId) => {
+    console.log(`💀 Kill Command issued for: ${agentId}`);
+    // Broadcast kill command to specific agent (if connected via socket room)
+    io.emit('kill-signal', agentId);
+    
+    if (activeAgents[agentId]) {
+      activeAgents[agentId].status = 'killed';
+      io.emit('agent-update', activeAgents[agentId]);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    // console.log('❌ Client Disconnected:', socket.id);
   });
-});
-
-// REST API for simple status check
-app.get('/status', (req, res) => {
-  res.json({ status: 'ok', agents: Object.keys(agents).length });
-});
-
-const fs = require('fs');
-
-// Read the HTML file once on startup
-const indexPath = path.resolve(__dirname, '../frontend/index.html');
-let indexHtml = '';
-try {
-  indexHtml = fs.readFileSync(indexPath, 'utf8');
-  console.log('Dashboard HTML loaded successfully from:', indexPath);
-} catch (err) {
-  console.error('CRITICAL ERROR: Could not read index.html from:', indexPath);
-  console.error(err);
-  indexHtml = '<h1>Error: Could not load dashboard HTML. Check server logs.</h1>';
-}
-
-// Serve the frontend dashboard
-app.get('/', (req, res) => {
-  res.send(indexHtml);
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`AgentWatch Server running on port ${PORT}`);
+  console.log(`🚀 ClawSight Backend running on port ${PORT}`);
 });

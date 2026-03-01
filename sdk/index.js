@@ -1,75 +1,43 @@
 const io = require('socket.io-client');
-const { v4: uuidv4 } = require('uuid');
-const os = require('os');
 
-module.exports = function AgentWatch(config = {}) {
-  const SERVER_URL = config.server || 'https://agentwatch-dashboard.onrender.com';
-  const API_KEY = config.token || process.env.AGENTWATCH_KEY;
-  const AGENT_ID = config.id || process.env.AGENT_ID || `agent-${uuidv4().substring(0, 8)}`;
-  const AGENT_NAME = config.name || process.env.AGENT_NAME || `Agent ${os.hostname()}`;
+/**
+ * ClawSight Client SDK
+ * @param {Object} config - { name, id, token, server }
+ */
+module.exports = function AgentWatch(config) {
+  const { name, id, token, server } = config;
 
-  if (!API_KEY) {
-    console.error('⚠️ AgentWatch: No API Key provided! Monitoring disabled.');
-    return { log: () => {}, status: () => {} };
+  if (!token || !server) {
+    console.error("❌ ClawSight Error: Missing token or server URL.");
+    return;
   }
 
-  const socket = io(SERVER_URL, {
-    auth: { token: API_KEY },
-    reconnection: true
+  const socket = io(server, {
+    auth: { token }
   });
 
-  console.log(`[AgentWatch] Monitoring enabled for: ${AGENT_NAME} (${AGENT_ID})`);
-
   socket.on('connect', () => {
-    // Register immediately on connect/reconnect
-    socket.emit('register-agent', {
-      id: AGENT_ID,
-      name: AGENT_NAME,
-      status: 'idle',
-      meta: {
-        hostname: os.hostname(),
-        platform: os.platform(),
-        arch: os.arch(),
-        uptime: os.uptime()
-      }
-    });
+    // console.log(`✅ ClawSight Connected: ${name}`);
+    socket.emit('register-agent', { id, name, status: 'working', metrics: { cost: 0, tokens: 0 }, logs: [] });
   });
 
   socket.on('kill-signal', (targetId) => {
-    if (targetId === AGENT_ID) {
-      console.error('🛑 AgentWatch: REMOTE KILL SIGNAL RECEIVED. Terminating process.');
-      process.exit(1); // Hard exit
+    if (targetId === id) {
+      console.error(`💀 ClawSight: KILL SIGNAL RECEIVED for ${id}. Terminating process immediately.`);
+      process.exit(1); 
     }
   });
 
-  // Public API
   return {
     log: (message, status = 'working') => {
-      socket.emit('agent-log', {
-        id: AGENT_ID,
-        message: String(message),
-        status: status
-      });
-    },
-    status: (newStatus) => {
-      socket.emit('agent-log', {
-        id: AGENT_ID,
-        message: `Status changed to: ${newStatus}`,
-        status: newStatus
-      });
+      socket.emit('agent-log', { id, message, status });
     },
     metric: (key, value) => {
-      socket.emit('agent-log', {
-        id: AGENT_ID,
-        metrics: { [key]: value }
-      });
+      // e.g. key='cost', value=0.05
+      socket.emit('agent-log', { id, metrics: { [key]: value } });
     },
-    error: (err) => {
-      socket.emit('agent-log', {
-        id: AGENT_ID,
-        message: `ERROR: ${err.message || err}`,
-        status: 'error'
-      });
+    status: (status) => {
+      socket.emit('agent-log', { id, status });
     }
   };
 };

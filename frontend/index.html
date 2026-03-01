@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AgentWatch - Mission Control</title>
+  <title>ClawSight - Mission Control</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -17,7 +17,7 @@
   <!-- Header -->
   <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-md z-10">
     <div class="flex items-center gap-4">
-      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v2.2</h1>
+      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">CLAWSIGHT v1.0</h1>
       <span id="connection-status" class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700">Connecting...</span>
     </div>
     <div class="flex gap-4 text-sm">
@@ -84,33 +84,29 @@
           <h3 class="text-lg font-bold text-emerald-400 mb-2">1. Install the SDK</h3>
           <p class="text-gray-400 mb-3">Run this in your agent's project folder:</p>
           <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group">
-            <code class="text-green-400">npm install socket.io-client uuid</code>
-            <button onclick="copyToClipboard('npm install socket.io-client uuid')" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+            <code class="text-green-400">npm install clawsight-client</code>
+            <button onclick="copyToClipboard('npm install clawsight-client')" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
           </div>
         </div>
         <div class="mb-8">
           <h3 class="text-lg font-bold text-emerald-400 mb-2">2. Add to Your Agent</h3>
           <p class="text-gray-400 mb-3">Copy this code into your agent's main file:</p>
           <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group overflow-x-auto">
-<pre><code class="text-blue-300">const</code> <code class="text-yellow-300">io</code> = <code class="text-green-300">require</code>(<code class="text-orange-300">'socket.io-client'</code>);
-<code class="text-blue-300">const</code> <code class="text-yellow-300">socket</code> = <code class="text-yellow-300">io</code>(<code class="text-orange-300">'https://agentwatch-dashboard.onrender.com'</code>, {
-  <code class="text-purple-300">auth</code>: { <code class="text-purple-300">token</code>: <code class="text-orange-300">'YOUR_API_KEY_HERE'</code> }
+<pre><code class="text-blue-300">const</code> <code class="text-yellow-300">monitor</code> = <code class="text-green-300">require</code>(<code class="text-orange-300">'clawsight-client'</code>);
+<code class="text-blue-300">const</code> <code class="text-yellow-300">watcher</code> = <code class="text-yellow-300">monitor</code>({
+  <code class="text-purple-300">server</code>: <code class="text-orange-300">'https://agentwatch-dashboard.onrender.com'</code>,
+  <code class="text-purple-300">token</code>: <code class="text-orange-300">'YOUR_API_KEY_HERE'</code>
 });
 
 <code class="text-gray-500">// Register Agent</code>
-<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'register-agent'</code>, {
+<code class="text-yellow-300">watcher</code>.<code class="text-yellow-300">init</code>({
   <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
-  <code class="text-purple-300">name</code>: <code class="text-orange-300">'Production Bot'</code>,
-  <code class="text-purple-300">status</code>: <code class="text-orange-300">'idle'</code>
+  <code class="text-purple-300">name</code>: <code class="text-orange-300">'Production Bot'</code>
 });
 
 <code class="text-gray-500">// Send Logs & Metrics</code>
-<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'agent-log'</code>, {
-  <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
-  <code class="text-purple-300">message</code>: <code class="text-orange-300">'Task started...'</code>,
-  <code class="text-purple-300">status</code>: <code class="text-orange-300">'working'</code>,
-  <code class="text-purple-300">metrics</code>: { <code class="text-purple-300">cost</code>: 0.05, <code class="text-purple-300">tokens</code>: 1200 }
-});</code></pre>
+<code class="text-yellow-300">watcher</code>.<code class="text-yellow-300">log</code>(<code class="text-orange-300">'Task started...'</code>, <code class="text-orange-300">'working'</code>);
+<code class="text-yellow-300">watcher</code>.<code class="text-yellow-300">metric</code>(<code class="text-orange-300">'cost'</code>, 0.05);</code></pre>
             <button onclick="copyCodeBlock()" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
           </div>
         </div>
@@ -136,19 +132,19 @@
         System Online
       </span>
     </div>
-    <p>&copy; 2026 AgentWatch Inc. All systems nominal.</p>
+    <p>&copy; 2026 ClawSight. Built for OpenClaw.</p>
   </footer>
 
   <script>
     // --- APP LOGIC ---
     let socket;
     let agents = {};
-    let apiKey = localStorage.getItem('agentwatch_api_key');
+    let apiKey = localStorage.getItem('clawsight_api_key');
 
     if (!apiKey) {
-      apiKey = prompt("Enter AgentWatch API Key:");
+      apiKey = prompt("Enter ClawSight API Key:");
       if (apiKey) {
-        localStorage.setItem('agentwatch_api_key', apiKey);
+        localStorage.setItem('clawsight_api_key', apiKey);
         initSocket();
       }
     } else {
@@ -317,7 +313,7 @@
       document.getElementById(`tab-${tabName}`).classList.add('text-emerald-400', 'border-b-2', 'border-emerald-400');
       document.getElementById(`tab-${tabName}`).classList.remove('text-gray-400');
     };
-    window.logout = () => { localStorage.removeItem('agentwatch_api_key'); window.location.reload(); };
+    window.logout = () => { localStorage.removeItem('clawsight_api_key'); window.location.reload(); };
     window.killAgent = (id) => { if (confirm(`Terminate agent ${id}?`)) socket.emit('kill-agent', id); };
     window.copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
     window.copyCodeBlock = () => {
