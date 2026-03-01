@@ -6,7 +6,6 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #1f2937; }
     ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -18,7 +17,7 @@
   <!-- Header -->
   <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-md z-10">
     <div class="flex items-center gap-4">
-      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v1.0</h1>
+      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v2.0</h1>
       <span id="connection-status" class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700">Connecting...</span>
     </div>
     <div class="flex gap-4 text-sm">
@@ -27,6 +26,26 @@
       <button onclick="logout()" class="text-red-400 hover:text-red-300 transition-colors pb-1">LOGOUT</button>
     </div>
   </header>
+
+  <!-- Global Analytics Bar -->
+  <div id="analytics-bar" class="bg-gray-800 border-b border-gray-700 p-4 grid grid-cols-4 gap-4 text-center shadow-sm z-10 hidden">
+    <div>
+      <div class="text-xs text-gray-500 uppercase font-bold">Total Active</div>
+      <div class="text-xl font-bold text-white" id="stat-active">0</div>
+    </div>
+    <div class="border-l border-gray-700">
+      <div class="text-xs text-gray-500 uppercase font-bold">Total Cost</div>
+      <div class="text-xl font-bold text-emerald-400" id="stat-cost">$0.00</div>
+    </div>
+    <div class="border-l border-gray-700">
+      <div class="text-xs text-gray-500 uppercase font-bold">Total Tokens</div>
+      <div class="text-xl font-bold text-blue-400" id="stat-tokens">0</div>
+    </div>
+    <div class="border-l border-gray-700">
+      <div class="text-xs text-gray-500 uppercase font-bold">Status</div>
+      <div class="text-xs font-bold text-green-400 mt-1">OPERATIONAL</div>
+    </div>
+  </div>
 
   <!-- Main Content Area -->
   <main class="flex-1 overflow-y-auto p-6 relative">
@@ -41,9 +60,18 @@
         <button onclick="showTab('setup')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded font-bold transition-colors">Install AgentWatch SDK</button>
       </div>
 
-      <!-- Agent Grid -->
-      <div id="agent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Cards injected here -->
+      <!-- Active Agents -->
+      <h3 id="label-active" class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 hidden">Active Fleet</h3>
+      <div id="agent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+        <!-- Active cards -->
+      </div>
+
+      <!-- Terminated Agents -->
+      <div id="history-section" class="hidden">
+        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 border-t border-gray-700 pt-8">History / Terminated</h3>
+        <div id="agent-grid-history" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
+          <!-- Dead cards -->
+        </div>
       </div>
     </div>
 
@@ -51,7 +79,6 @@
     <div id="view-setup" class="hidden max-w-4xl mx-auto">
       <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 shadow-xl">
         <h2 class="text-3xl font-bold text-white mb-6">Quick Start Guide</h2>
-        
         <div class="mb-8">
           <h3 class="text-lg font-bold text-emerald-400 mb-2">1. Install the SDK</h3>
           <p class="text-gray-400 mb-3">Run this in your agent's project folder:</p>
@@ -60,7 +87,6 @@
             <button onclick="copyToClipboard('npm install socket.io-client uuid')" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
           </div>
         </div>
-
         <div class="mb-8">
           <h3 class="text-lg font-bold text-emerald-400 mb-2">2. Add to Your Agent</h3>
           <p class="text-gray-400 mb-3">Copy this code into your agent's main file:</p>
@@ -77,16 +103,16 @@
   <code class="text-purple-300">status</code>: <code class="text-orange-300">'idle'</code>
 });
 
-<code class="text-gray-500">// Send Logs</code>
+<code class="text-gray-500">// Send Logs & Metrics</code>
 <code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'agent-log'</code>, {
   <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
   <code class="text-purple-300">message</code>: <code class="text-orange-300">'Task started...'</code>,
-  <code class="text-purple-300">status</code>: <code class="text-orange-300">'working'</code>
+  <code class="text-purple-300">status</code>: <code class="text-orange-300">'working'</code>,
+  <code class="text-purple-300">metrics</code>: { <code class="text-purple-300">cost</code>: 0.05, <code class="text-purple-300">tokens</code>: 1200 }
 });</code></pre>
             <button onclick="copyCodeBlock()" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
           </div>
         </div>
-
         <div class="mb-8">
           <h3 class="text-lg font-bold text-emerald-400 mb-2">3. Your API Key</h3>
           <p class="text-gray-400 mb-3">Use this key to authenticate your agents:</p>
@@ -94,10 +120,8 @@
             <span id="display-api-key" class="text-yellow-400">Not set (Check Settings)</span>
           </div>
         </div>
-
       </div>
     </div>
-
   </main>
 
   <script>
@@ -106,46 +130,34 @@
     let agents = {};
     let apiKey = localStorage.getItem('agentwatch_api_key');
 
-    // Init
     if (!apiKey) {
       apiKey = prompt("Enter AgentWatch API Key to access:");
       if (apiKey) {
         localStorage.setItem('agentwatch_api_key', apiKey);
         initSocket();
       } else {
-        alert("API Key required via prompt or URL parameter ?key=...");
+        alert("API Key required.");
       }
     } else {
       initSocket();
     }
 
-    // Display Key in Setup Tab
     document.getElementById('display-api-key').textContent = apiKey || "Key Missing";
 
     function initSocket() {
-      // Auto-detect production URL vs localhost
-      const serverUrl = window.location.origin; // e.g. https://agentwatch.onrender.com
-      
-      socket = io(serverUrl, {
-        auth: { token: apiKey },
-        reconnection: true,
-        reconnectionAttempts: 5
-      });
-
+      const serverUrl = window.location.origin;
+      socket = io(serverUrl, { auth: { token: apiKey }, reconnection: true });
       const statusEl = document.getElementById('connection-status');
 
       socket.on('connect', () => {
         statusEl.textContent = 'Connected';
         statusEl.className = 'text-xs text-emerald-400 bg-gray-900 px-2 py-1 rounded border border-emerald-900';
-        document.getElementById('empty-state').classList.remove('hidden'); // Default state until data arrives
       });
 
       socket.on('connect_error', (err) => {
         statusEl.textContent = 'Auth Failed';
         statusEl.className = 'text-xs text-red-400 bg-gray-900 px-2 py-1 rounded border border-red-900';
-        if (err.message === "Authentication error: Invalid API Key") {
-          logout();
-        }
+        if (err.message === "Authentication error: Invalid API Key") logout();
       });
 
       socket.on('disconnect', () => {
@@ -153,27 +165,10 @@
         statusEl.className = 'text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700';
       });
 
-      // Data Handling
-      socket.on('init', (data) => {
-        agents = data;
-        renderAllAgents();
-      });
-
-      socket.on('agent-update', (agent) => {
-        agents[agent.id] = agent;
-        renderAgent(agent);
-        checkEmptyState();
-      });
-
-      socket.on('kill-signal', (agentId) => {
-        if (agents[agentId]) {
-          agents[agentId].status = 'killed';
-          renderAgent(agents[agentId]);
-        }
-      });
+      socket.on('init', (data) => { agents = data; renderAllAgents(); });
+      socket.on('agent-update', (agent) => { agents[agent.id] = agent; renderAllAgents(); }); // Re-render all to sort/group
+      socket.on('kill-signal', (agentId) => { if (agents[agentId]) { agents[agentId].status = 'killed'; renderAllAgents(); } });
     }
-
-    // --- UI FUNCTIONS ---
 
     function showTab(tabName) {
       document.getElementById('view-dashboard').classList.add('hidden');
@@ -182,7 +177,6 @@
       document.getElementById('tab-setup').classList.remove('text-emerald-400', 'border-b-2', 'border-emerald-400');
       document.getElementById('tab-dashboard').classList.add('text-gray-400');
       document.getElementById('tab-setup').classList.add('text-gray-400');
-
       document.getElementById(`view-${tabName}`).classList.remove('hidden');
       const btn = document.getElementById(`tab-${tabName}`);
       btn.classList.add('text-emerald-400', 'border-b-2', 'border-emerald-400');
@@ -196,48 +190,69 @@
 
     function checkEmptyState() {
       const hasAgents = Object.keys(agents).length > 0;
-      const emptyState = document.getElementById('empty-state');
-      const grid = document.getElementById('agent-grid');
-      
       if (hasAgents) {
-        emptyState.classList.add('hidden');
-        grid.classList.remove('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('analytics-bar').classList.remove('hidden');
+        document.getElementById('label-active').classList.remove('hidden');
       } else {
-        emptyState.classList.remove('hidden');
-        grid.classList.add('hidden');
+        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('analytics-bar').classList.add('hidden');
+        document.getElementById('label-active').classList.add('hidden');
       }
     }
 
     function renderAllAgents() {
-      const grid = document.getElementById('agent-grid');
-      grid.innerHTML = '';
-      Object.values(agents).forEach(renderAgent);
+      const activeGrid = document.getElementById('agent-grid');
+      const historyGrid = document.getElementById('agent-grid-history');
+      const historySection = document.getElementById('history-section');
+      
+      activeGrid.innerHTML = '';
+      historyGrid.innerHTML = '';
+      
+      let totalCost = 0;
+      let totalTokens = 0;
+      let activeCount = 0;
+
+      // Grouping Logic (Optional Future): For now, sort Active vs Killed
+      Object.values(agents).forEach(agent => {
+        totalCost += agent.metrics?.cost || 0;
+        totalTokens += agent.metrics?.tokens || 0;
+        
+        if (agent.status === 'killed' || agent.status === 'error') {
+          renderAgent(agent, historyGrid);
+        } else {
+          activeCount++;
+          renderAgent(agent, activeGrid);
+        }
+      });
+
+      // Show/Hide Sections
+      if (historyGrid.children.length > 0) historySection.classList.remove('hidden');
+      else historySection.classList.add('hidden');
+
+      // Update Stats
+      document.getElementById('stat-active').textContent = activeCount;
+      document.getElementById('stat-cost').textContent = '$' + totalCost.toFixed(4);
+      document.getElementById('stat-tokens').textContent = totalTokens.toLocaleString();
+
       checkEmptyState();
     }
 
-    function renderAgent(agent) {
-      let card = document.getElementById(`agent-${agent.id}`);
-      const grid = document.getElementById('agent-grid');
+    function renderAgent(agent, targetGrid) {
+      let card = document.createElement('div');
+      card.id = `agent-${agent.id}`;
+      card.className = "bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden flex flex-col h-96 transition-all hover:border-emerald-500/50";
+      targetGrid.appendChild(card);
 
-      if (!card) {
-        card = document.createElement('div');
-        card.id = `agent-${agent.id}`;
-        card.className = "bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden flex flex-col h-96 transition-all hover:border-emerald-500/50";
-        grid.appendChild(card);
-      }
-
-      // Dynamic Status Colors
       let statusColor = 'bg-gray-500';
       if (agent.status === 'working') statusColor = 'bg-emerald-500 animate-pulse';
       if (agent.status === 'error') statusColor = 'bg-yellow-500 animate-bounce';
       if (agent.status === 'killed') statusColor = 'bg-red-600';
 
-      // Metrics (Defaults)
       const cost = agent.metrics?.cost?.toFixed(4) || '0.0000';
       const tokens = agent.metrics?.tokens?.toLocaleString() || '0';
       const uptime = agent.metrics?.uptime ? Math.floor(agent.metrics.uptime / 60) + 'm' : '0m';
 
-      // Logs HTML
       const logsHtml = agent.logs.slice().reverse().map(l => 
         `<div class="mb-1 text-xs text-gray-300 font-mono border-l-2 border-gray-700 pl-2">
            <span class="text-gray-500">[${new Date(l.timestamp).toLocaleTimeString()}]</span> ${l.message}
@@ -252,27 +267,14 @@
           </div>
           <div class="w-3 h-3 rounded-full ${statusColor} status-dot"></div>
         </div>
-
-        <!-- PRO METRICS GRID -->
         <div class="grid grid-cols-3 gap-1 bg-gray-900 border-b border-gray-700 p-2 text-center">
-          <div>
-            <div class="text-[10px] text-gray-500 uppercase font-bold">COST</div>
-            <div class="text-sm font-mono text-emerald-400">$${cost}</div>
-          </div>
-          <div class="border-l border-gray-800">
-            <div class="text-[10px] text-gray-500 uppercase font-bold">TOKENS</div>
-            <div class="text-sm font-mono text-blue-400">${tokens}</div>
-          </div>
-          <div class="border-l border-gray-800">
-            <div class="text-[10px] text-gray-500 uppercase font-bold">UPTIME</div>
-            <div class="text-sm font-mono text-gray-400">${uptime}</div>
-          </div>
+          <div><div class="text-[10px] text-gray-500 uppercase font-bold">COST</div><div class="text-sm font-mono text-emerald-400">$${cost}</div></div>
+          <div class="border-l border-gray-800"><div class="text-[10px] text-gray-500 uppercase font-bold">TOKENS</div><div class="text-sm font-mono text-blue-400">${tokens}</div></div>
+          <div class="border-l border-gray-800"><div class="text-[10px] text-gray-500 uppercase font-bold">UPTIME</div><div class="text-sm font-mono text-gray-400">${uptime}</div></div>
         </div>
-        
         <div class="flex-1 bg-black p-4 overflow-y-auto scrollbar-thin">
           ${logsHtml || '<div class="text-gray-600 text-sm italic">Waiting for logs...</div>'}
         </div>
-
         <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
           <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">${agent.status}</span>
           ${agent.status !== 'killed' ? 
@@ -283,19 +285,9 @@
       `;
     }
 
-    window.killAgent = (id) => {
-      if (confirm(`⚠️ DANGER: Terminate agent ${id}? This cannot be undone.`)) {
-        socket.emit('kill-agent', id);
-      }
-    };
-
-    window.copyToClipboard = (text) => {
-      navigator.clipboard.writeText(text);
-      alert("Copied to clipboard!");
-    };
-    
+    window.killAgent = (id) => { if (confirm(`⚠️ Terminate agent ${id}?`)) socket.emit('kill-agent', id); };
+    window.copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
     window.copyCodeBlock = () => {
-      // Simplified copy logic for the code block
       const code = `const io = require('socket.io-client');
 const socket = io('https://agentwatch-dashboard.onrender.com', {
   auth: { token: '${apiKey}' }
