@@ -2,7 +2,8 @@ const io = require('socket.io-client');
 const { v4: uuidv4 } = require('uuid');
 
 const AGENT_ID = process.env.AGENT_ID || `agent-${uuidv4().substring(0, 8)}`;
-const SERVER_URL = process.env.SERVER_URL || 'https://agentwatch-dashboard.onrender.com';
+// Connecting to Render Production URL
+const SERVER_URL = 'https://agentwatch-dashboard.onrender.com';
 
 console.log(`Starting AgentWatch SDK for agent: ${AGENT_ID} -> Connecting to ${SERVER_URL}`);
 
@@ -11,24 +12,24 @@ const socket = io(SERVER_URL);
 let intervalId;
 let counter = 0;
 const tasks = [
-  "Searching web for 'best pizza'...",
-  "Analyzing 5 search results...",
-  "Reading file 'recipes.txt'...",
-  "Writing summary to 'output.md'...",
-  "Thinking about next step...",
-  "Running python script...",
+  "Fetching market data...",
+  "Analyzing trends...",
+  "Executing trade simulation...",
+  "Writing report to 'strategy.md'...",
+  "Sleeping for 5s...",
+  "Waking up...",
   "Checking email...",
-  "Error: Rate limit hit. Retrying...",
-  "Success! Task complete."
+  "Error: API Timeout. Retrying...",
+  "Success! Cycle complete."
 ];
 
 socket.on('connect', () => {
-  console.log('Connected to AgentWatch Server!');
+  console.log('✅ Connected to AgentWatch Dashboard!');
   
   // Register Agent
   socket.emit('register-agent', {
     id: AGENT_ID,
-    name: process.env.AGENT_NAME || "Research Agent v1",
+    name: process.env.AGENT_NAME || "Production Agent v1",
     status: "idle"
   });
 
@@ -47,7 +48,7 @@ socket.on('connect', () => {
     });
 
     counter++;
-  }, 2000); // Report every 2 seconds
+  }, 3000); // Report every 3 seconds
 });
 
 // Listen for KILL command from Dashboard

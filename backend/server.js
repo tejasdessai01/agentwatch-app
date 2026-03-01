@@ -19,8 +19,21 @@ const io = new Server(server, {
 // In-memory store for active agents
 let agents = {};
 
+// Security: API Key Authentication
+const API_KEY = process.env.API_KEY || 'default-insecure-key'; // MUST set this in production!
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (token === API_KEY) {
+    next();
+  } else {
+    console.log(`[Security] Rejected connection attempt with invalid token: ${token}`);
+    next(new Error("Authentication error: Invalid API Key"));
+  }
+});
+
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log(`[Security] Authenticated client connected: ${socket.id}`);
   
   // Send current state on connect
   socket.emit('init', agents);

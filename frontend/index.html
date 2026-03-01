@@ -19,7 +19,16 @@
   </div>
 
   <script>
-    const socket = io(); // Connect to current origin (the tunnel URL)
+    // Get API Key from storage or prompt
+    let apiKey = localStorage.getItem('agentwatch_api_key');
+    if (!apiKey) {
+      apiKey = prompt("Enter AgentWatch API Key:");
+      if (apiKey) localStorage.setItem('agentwatch_api_key', apiKey);
+    }
+
+    const socket = io({
+      auth: { token: apiKey }
+    }); 
     const grid = document.getElementById('agent-grid');
     const statusDiv = document.getElementById('status');
     const agents = {};
