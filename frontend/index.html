@@ -209,9 +209,13 @@
           <div class="flex-1 bg-black p-4 overflow-y-auto scrollbar-thin">
             ${logsHtml || '<div class="text-gray-600 text-sm italic">Waiting for logs...</div>'}
           </div>
-          <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
-             <button onclick="killAgent('${agent.id}')" class="bg-red-900/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-colors w-full">TERMINATE</button>
-          </div>
+        <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
+          <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">${agent.status}</span>
+          ${agent.status !== 'killed' ? 
+            `<button onclick="killAgent('${agent.id}')" class="bg-red-900/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-colors">KILL</button>` : 
+            `<span class="text-red-500 text-xs font-bold">TERMINATED</span>`
+          }
+        </div>
         `;
       }
     }
