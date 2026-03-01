@@ -1,0 +1,30 @@
+{
+  "name": "clawsight-client",
+  "version": "1.0.0",
+  "description": "Official Client SDK for ClawSight - Mission Control for AI Agents.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClawSight/platform.git"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "monitoring",
+    "dashboard",
+    "openclaw",
+    "clawsight"
+  ],
+  "author": "ClawSight Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ClawSight/platform/issues"
+  },
+  "homepage": "https://clawsight.github.io",
+  "dependencies": {
+    "socket.io-client": "^4.7.4"
+  }
+}
