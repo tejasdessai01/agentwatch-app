@@ -5,114 +5,284 @@
   <title>AgentWatch - Mission Control</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1f2937; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+  </style>
 </head>
-<body class="bg-gray-900 text-white font-mono p-4">
-  <div class="container mx-auto">
-    <h1 class="text-3xl font-bold mb-4 text-emerald-400">AgentWatch Terminal v0.1</h1>
-    
-    <div id="status" class="mb-4 text-xs text-gray-500">Connecting to server...</div>
+<body class="bg-gray-900 text-white font-mono h-screen overflow-hidden flex flex-col">
 
-    <!-- Agent Grid -->
-    <div id="agent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <!-- Agent cards injected here -->
+  <!-- Header -->
+  <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-md z-10">
+    <div class="flex items-center gap-4">
+      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v1.0</h1>
+      <span id="connection-status" class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700">Connecting...</span>
     </div>
-  </div>
+    <div class="flex gap-4 text-sm">
+      <button onclick="showTab('dashboard')" id="tab-dashboard" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-1">DASHBOARD</button>
+      <button onclick="showTab('setup')" id="tab-setup" class="text-gray-400 hover:text-white transition-colors pb-1">SETUP GUIDE</button>
+      <button onclick="logout()" class="text-red-400 hover:text-red-300 transition-colors pb-1">LOGOUT</button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 overflow-y-auto p-6 relative">
+    
+    <!-- DASHBOARD TAB -->
+    <div id="view-dashboard" class="block h-full">
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden h-full flex flex-col items-center justify-center text-gray-500">
+        <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+        <h3 class="text-xl font-bold mb-2">No Active Agents</h3>
+        <p class="mb-6">Your fleet is offline. Start an agent to see data.</p>
+        <button onclick="showTab('setup')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded font-bold transition-colors">Install AgentWatch SDK</button>
+      </div>
+
+      <!-- Agent Grid -->
+      <div id="agent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Cards injected here -->
+      </div>
+    </div>
+
+    <!-- SETUP TAB -->
+    <div id="view-setup" class="hidden max-w-4xl mx-auto">
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 shadow-xl">
+        <h2 class="text-3xl font-bold text-white mb-6">Quick Start Guide</h2>
+        
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">1. Install the SDK</h3>
+          <p class="text-gray-400 mb-3">Run this in your agent's project folder:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group">
+            <code class="text-green-400">npm install socket.io-client uuid</code>
+            <button onclick="copyToClipboard('npm install socket.io-client uuid')" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+          </div>
+        </div>
+
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">2. Add to Your Agent</h3>
+          <p class="text-gray-400 mb-3">Copy this code into your agent's main file:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group overflow-x-auto">
+<pre><code class="text-blue-300">const</code> <code class="text-yellow-300">io</code> = <code class="text-green-300">require</code>(<code class="text-orange-300">'socket.io-client'</code>);
+<code class="text-blue-300">const</code> <code class="text-yellow-300">socket</code> = <code class="text-yellow-300">io</code>(<code class="text-orange-300">'https://agentwatch-dashboard.onrender.com'</code>, {
+  <code class="text-purple-300">auth</code>: { <code class="text-purple-300">token</code>: <code class="text-orange-300">'YOUR_API_KEY_HERE'</code> }
+});
+
+<code class="text-gray-500">// Register Agent</code>
+<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'register-agent'</code>, {
+  <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
+  <code class="text-purple-300">name</code>: <code class="text-orange-300">'Production Bot'</code>,
+  <code class="text-purple-300">status</code>: <code class="text-orange-300">'idle'</code>
+});
+
+<code class="text-gray-500">// Send Logs</code>
+<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'agent-log'</code>, {
+  <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
+  <code class="text-purple-300">message</code>: <code class="text-orange-300">'Task started...'</code>,
+  <code class="text-purple-300">status</code>: <code class="text-orange-300">'working'</code>
+});</code></pre>
+            <button onclick="copyCodeBlock()" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+          </div>
+        </div>
+
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">3. Your API Key</h3>
+          <p class="text-gray-400 mb-3">Use this key to authenticate your agents:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm break-all">
+            <span id="display-api-key" class="text-yellow-400">Not set (Check Settings)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
 
   <script>
-    // Get API Key from storage or prompt
+    // --- APP LOGIC ---
+    let socket;
+    let agents = {};
     let apiKey = localStorage.getItem('agentwatch_api_key');
+
+    // Init
     if (!apiKey) {
-      apiKey = prompt("Enter AgentWatch API Key:");
-      if (apiKey) localStorage.setItem('agentwatch_api_key', apiKey);
+      apiKey = prompt("Enter AgentWatch API Key to access:");
+      if (apiKey) {
+        localStorage.setItem('agentwatch_api_key', apiKey);
+        initSocket();
+      } else {
+        alert("API Key required via prompt or URL parameter ?key=...");
+      }
+    } else {
+      initSocket();
     }
 
-    const socket = io({
-      auth: { token: apiKey }
-    }); 
-    const grid = document.getElementById('agent-grid');
-    const statusDiv = document.getElementById('status');
-    const agents = {};
+    // Display Key in Setup Tab
+    document.getElementById('display-api-key').textContent = apiKey || "Key Missing";
 
-    socket.on('connect', () => {
-      statusDiv.textContent = 'Connected to AgentWatch Server (Port 8080)';
-      statusDiv.classList.add('text-emerald-500');
-    });
-
-    socket.on('disconnect', () => {
-      statusDiv.textContent = 'Disconnected. Retrying...';
-      statusDiv.classList.remove('text-emerald-500');
-    });
-
-    // Initial load
-    socket.on('init', (data) => {
-      Object.keys(data).forEach(id => updateAgent(data[id]));
-    });
-
-    // Real-time update
-    socket.on('agent-update', (agent) => {
-      updateAgent(agent);
-    });
-
-    // Listen for kill signal (to update UI)
-    socket.on('kill-signal', (agentId) => {
-      const card = document.getElementById(`agent-${agentId}`);
-      if (card) {
-        card.classList.add('border-red-600', 'opacity-50');
-        const status = card.querySelector('.status-dot');
-        status.className = 'w-3 h-3 rounded-full bg-red-600 status-dot animate-pulse';
-        const log = card.querySelector('.agent-log');
-        log.textContent = "⚠️ KILLED BY USER COMMAND";
-      }
-    });
-
-    function updateAgent(agent) {
-      let card = document.getElementById(`agent-${agent.id}`);
+    function initSocket() {
+      // Auto-detect production URL vs localhost
+      const serverUrl = window.location.origin; // e.g. https://agentwatch.onrender.com
       
+      socket = io(serverUrl, {
+        auth: { token: apiKey },
+        reconnection: true,
+        reconnectionAttempts: 5
+      });
+
+      const statusEl = document.getElementById('connection-status');
+
+      socket.on('connect', () => {
+        statusEl.textContent = 'Connected';
+        statusEl.className = 'text-xs text-emerald-400 bg-gray-900 px-2 py-1 rounded border border-emerald-900';
+        document.getElementById('empty-state').classList.remove('hidden'); // Default state until data arrives
+      });
+
+      socket.on('connect_error', (err) => {
+        statusEl.textContent = 'Auth Failed';
+        statusEl.className = 'text-xs text-red-400 bg-gray-900 px-2 py-1 rounded border border-red-900';
+        if (err.message === "Authentication error: Invalid API Key") {
+          logout();
+        }
+      });
+
+      socket.on('disconnect', () => {
+        statusEl.textContent = 'Disconnected';
+        statusEl.className = 'text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700';
+      });
+
+      // Data Handling
+      socket.on('init', (data) => {
+        agents = data;
+        renderAllAgents();
+      });
+
+      socket.on('agent-update', (agent) => {
+        agents[agent.id] = agent;
+        renderAgent(agent);
+        checkEmptyState();
+      });
+
+      socket.on('kill-signal', (agentId) => {
+        if (agents[agentId]) {
+          agents[agentId].status = 'killed';
+          renderAgent(agents[agentId]);
+        }
+      });
+    }
+
+    // --- UI FUNCTIONS ---
+
+    function showTab(tabName) {
+      document.getElementById('view-dashboard').classList.add('hidden');
+      document.getElementById('view-setup').classList.add('hidden');
+      document.getElementById('tab-dashboard').classList.remove('text-emerald-400', 'border-b-2', 'border-emerald-400');
+      document.getElementById('tab-setup').classList.remove('text-emerald-400', 'border-b-2', 'border-emerald-400');
+      document.getElementById('tab-dashboard').classList.add('text-gray-400');
+      document.getElementById('tab-setup').classList.add('text-gray-400');
+
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      const btn = document.getElementById(`tab-${tabName}`);
+      btn.classList.add('text-emerald-400', 'border-b-2', 'border-emerald-400');
+      btn.classList.remove('text-gray-400');
+    }
+
+    function logout() {
+      localStorage.removeItem('agentwatch_api_key');
+      window.location.reload();
+    }
+
+    function checkEmptyState() {
+      const hasAgents = Object.keys(agents).length > 0;
+      const emptyState = document.getElementById('empty-state');
+      const grid = document.getElementById('agent-grid');
+      
+      if (hasAgents) {
+        emptyState.classList.add('hidden');
+        grid.classList.remove('hidden');
+      } else {
+        emptyState.classList.remove('hidden');
+        grid.classList.add('hidden');
+      }
+    }
+
+    function renderAllAgents() {
+      const grid = document.getElementById('agent-grid');
+      grid.innerHTML = '';
+      Object.values(agents).forEach(renderAgent);
+      checkEmptyState();
+    }
+
+    function renderAgent(agent) {
+      let card = document.getElementById(`agent-${agent.id}`);
+      const grid = document.getElementById('agent-grid');
+
       if (!card) {
-        // Create new card
         card = document.createElement('div');
         card.id = `agent-${agent.id}`;
-        card.className = "bg-gray-800 border border-gray-700 p-4 rounded-lg shadow-lg transition-all duration-300 hover:border-emerald-500";
-        card.innerHTML = `
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xl font-bold text-white">${agent.name}</h2>
-            <div class="w-3 h-3 rounded-full bg-gray-500 status-dot"></div>
-          </div>
-          <div class="text-xs text-gray-400 mb-2 font-mono">ID: ${agent.id}</div>
-          <div class="h-32 bg-black rounded p-2 overflow-y-auto text-xs font-mono text-green-400 border border-gray-700">
-            <div class="agent-logs">Waiting for logs...</div>
-          </div>
-          <div class="mt-4 flex justify-between items-center">
-            <span class="text-xs text-gray-500">Status: <span class="agent-status capitalize">${agent.status}</span></span>
-            <button onclick="killAgent('${agent.id}')" class="bg-red-900 hover:bg-red-700 text-white text-xs py-1 px-3 rounded uppercase font-bold tracking-wider transition-colors">KILL TASK</button>
-          </div>
-        `;
+        card.className = "bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden flex flex-col h-96 transition-all hover:border-emerald-500/50";
         grid.appendChild(card);
       }
 
-      // Update existing card
-      const statusDot = card.querySelector('.status-dot');
-      const statusText = card.querySelector('.agent-status');
-      const logsContainer = card.querySelector('.agent-logs');
-      
-      // Update status dot color
-      if (agent.status === 'working') statusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse status-dot';
-      else if (agent.status === 'error') statusDot.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-bounce status-dot';
-      else if (agent.status === 'killed') statusDot.className = 'w-3 h-3 rounded-full bg-red-600 status-dot';
-      else statusDot.className = 'w-3 h-3 rounded-full bg-gray-500 status-dot';
+      // Dynamic Status Colors
+      let statusColor = 'bg-gray-500';
+      if (agent.status === 'working') statusColor = 'bg-emerald-500 animate-pulse';
+      if (agent.status === 'error') statusColor = 'bg-yellow-500 animate-bounce';
+      if (agent.status === 'killed') statusColor = 'bg-red-600';
 
-      statusText.textContent = agent.status;
+      // Logs HTML
+      const logsHtml = agent.logs.slice().reverse().map(l => 
+        `<div class="mb-1 text-xs text-gray-300 font-mono border-l-2 border-gray-700 pl-2">
+           <span class="text-gray-500">[${new Date(l.timestamp).toLocaleTimeString()}]</span> ${l.message}
+         </div>`
+      ).join('');
 
-      // Update logs (show last 5)
-      const recentLogs = agent.logs.slice(-5).map(l => `[${new Date(l.timestamp).toLocaleTimeString()}] ${l.message}`).join('<br>');
-      logsContainer.innerHTML = recentLogs || "Waiting for logs...";
-      logsContainer.scrollTop = logsContainer.scrollHeight; // Auto-scroll
+      card.innerHTML = `
+        <div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-white truncate w-40" title="${agent.name}">${agent.name}</h3>
+            <div class="text-xs text-gray-500 font-mono truncate w-40">${agent.id}</div>
+          </div>
+          <div class="w-3 h-3 rounded-full ${statusColor} status-dot"></div>
+        </div>
+        
+        <div class="flex-1 bg-black p-4 overflow-y-auto scrollbar-thin">
+          ${logsHtml || '<div class="text-gray-600 text-sm italic">Waiting for logs...</div>'}
+        </div>
+
+        <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
+          <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">${agent.status}</span>
+          ${agent.status !== 'killed' ? 
+            `<button onclick="killAgent('${agent.id}')" class="bg-red-900/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-colors">KILL</button>` : 
+            `<span class="text-red-500 text-xs font-bold">TERMINATED</span>`
+          }
+        </div>
+      `;
     }
 
     window.killAgent = (id) => {
-      if (confirm(`Are you sure you want to KILL agent ${id}?`)) {
+      if (confirm(`⚠️ DANGER: Terminate agent ${id}? This cannot be undone.`)) {
         socket.emit('kill-agent', id);
       }
+    };
+
+    window.copyToClipboard = (text) => {
+      navigator.clipboard.writeText(text);
+      alert("Copied to clipboard!");
+    };
+    
+    window.copyCodeBlock = () => {
+      // Simplified copy logic for the code block
+      const code = `const io = require('socket.io-client');
+const socket = io('https://agentwatch-dashboard.onrender.com', {
+  auth: { token: '${apiKey}' }
+});
+socket.emit('register-agent', { id: 'agent-01', name: 'My Bot' });
+socket.emit('agent-log', { id: 'agent-01', message: 'Hello World', status: 'working' });`;
+      navigator.clipboard.writeText(code);
+      alert("Code copied!");
     };
   </script>
 </body>
