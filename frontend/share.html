@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ClawSight - Shared Incident Log</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-mono h-screen flex flex-col items-center justify-center">
+
+  <div id="loading" class="text-gray-500 animate-pulse">Loading incident report...</div>
+
+  <div id="content" class="hidden w-full max-w-4xl p-4 h-full flex flex-col">
+    <!-- Header -->
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6 flex justify-between items-center">
+      <div>
+        <div class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">INCIDENT REPORT</div>
+        <h1 class="text-2xl font-bold text-gray-900" id="agent-name">Unknown Agent</h1>
+        <div class="text-sm text-gray-500 font-mono" id="agent-id">ID: ...</div>
+      </div>
+      <div class="text-right">
+        <div class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">STATUS</div>
+        <div class="px-3 py-1 bg-gray-100 rounded text-sm font-bold text-gray-700" id="agent-status">UNKNOWN</div>
+      </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-center">
+        <div class="text-xs text-gray-400 uppercase font-bold">Total Cost</div>
+        <div class="text-xl font-bold text-emerald-600 font-mono" id="metric-cost">$0.00</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-center">
+        <div class="text-xs text-gray-400 uppercase font-bold">Tokens Used</div>
+        <div class="text-xl font-bold text-blue-600 font-mono" id="metric-tokens">0</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm text-center">
+        <div class="text-xs text-gray-400 uppercase font-bold">Timestamp</div>
+        <div class="text-sm font-bold text-gray-700 mt-1" id="timestamp">Now</div>
+      </div>
+      <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100 shadow-sm text-center flex flex-col justify-center items-center cursor-pointer hover:bg-emerald-100 transition" onclick="window.location.href='https://clawsight.org'">
+        <div class="text-xs text-emerald-600 uppercase font-bold">Powered By</div>
+        <div class="text-lg font-bold text-emerald-800">ClawSight_</div>
+      </div>
+    </div>
+
+    <!-- Logs Terminal -->
+    <div class="flex-1 bg-gray-900 rounded-lg shadow-lg overflow-hidden flex flex-col border border-gray-800">
+      <div class="bg-gray-800 px-4 py-2 border-b border-gray-700 text-xs text-gray-400 flex justify-between">
+        <span>Console Output (Read-Only)</span>
+        <span class="text-emerald-500">● Archived Session</span>
+      </div>
+      <div class="flex-1 p-4 overflow-y-auto font-mono text-sm text-gray-300 space-y-1" id="logs-container">
+        <!-- Logs go here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareId = urlParams.get('id');
+
+    if (!shareId) {
+      document.getElementById('loading').textContent = "Error: Invalid Share ID.";
+    } else {
+      fetch(`/api/share/${shareId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          renderReport(data);
+        })
+        .catch(err => {
+          document.getElementById('loading').textContent = `Error: ${err.message}`;
+        });
+    }
+
+    function renderReport(agent) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('content').classList.remove('hidden');
+
+      document.getElementById('agent-name').textContent = agent.name || 'Unknown Agent';
+      document.getElementById('agent-id').textContent = agent.id;
+      
+      const statusEl = document.getElementById('agent-status');
+      statusEl.textContent = agent.status.toUpperCase();
+      if (agent.status === 'error') statusEl.className = "px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-bold";
+      if (agent.status === 'killed') statusEl.className = "px-3 py-1 bg-gray-800 text-white rounded text-sm font-bold";
+
+      document.getElementById('metric-cost').textContent = `$${(agent.metrics?.cost || 0).toFixed(4)}`;
+      document.getElementById('metric-tokens').textContent = (agent.metrics?.tokens || 0).toLocaleString();
+      document.getElementById('timestamp').textContent = new Date(agent.timestamp || Date.now()).toLocaleTimeString();
+
+      const logsContainer = document.getElementById('logs-container');
+      if (agent.logs && agent.logs.length > 0) {
+        logsContainer.innerHTML = agent.logs.map(l => 
+          `<div class="border-l-2 border-gray-700 pl-2 hover:bg-gray-800/50 transition">
+             <span class="text-gray-500 text-xs mr-2">[${new Date(l.timestamp).toLocaleTimeString()}]</span>
+             <span class="${l.message.includes('ERROR') ? 'text-red-400' : 'text-gray-300'}">${l.message}</span>
+           </div>`
+        ).join('');
+      } else {
+        logsContainer.innerHTML = '<div class="text-gray-500 italic">No logs recorded for this session.</div>';
+      }
+    }
+  </script>
+</body>
+</html>
