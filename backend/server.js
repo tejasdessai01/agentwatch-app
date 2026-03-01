@@ -54,10 +54,11 @@ io.on('connection', (socket) => {
 
   // Agent sends logs/status
   socket.on('agent-log', (data) => {
-    const { id, message, status } = data;
+    const { id, message, status, metrics } = data;
     if (agents[id]) {
       agents[id].status = status || agents[id].status;
-      agents[id].logs.push({ timestamp: Date.now(), message });
+      if (message) agents[id].logs.push({ timestamp: Date.now(), message });
+      if (metrics) agents[id].metrics = { ...agents[id].metrics, ...metrics }; // Merge metrics
       agents[id].lastSeen = Date.now();
       // Keep logs manageable
       if (agents[id].logs.length > 50) agents[id].logs.shift();

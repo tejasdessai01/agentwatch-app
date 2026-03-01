@@ -58,6 +58,12 @@ module.exports = function AgentWatch(config = {}) {
         status: newStatus
       });
     },
+    metric: (key, value) => {
+      socket.emit('agent-log', {
+        id: AGENT_ID,
+        metrics: { [key]: value }
+      });
+    },
     error: (err) => {
       socket.emit('agent-log', {
         id: AGENT_ID,
