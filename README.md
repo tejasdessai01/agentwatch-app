@@ -1,301 +1,85 @@
-# AgentWatch - Real-Time Agent Monitoring
+# ClawSight 🦅
 
-**Professional-grade monitoring dashboard for OpenClaw agents.**
+**Mission Control for Autonomous Agents.**
 
-Built in response to: "I spawned 4 agents today and had zero visibility into what they were doing."
-
----
-
-## 🎯 What It Does
-
-- **Real-time monitoring** of all your OpenClaw agents
-- **Cost tracking** down to the penny (tokens + $USD)
-- **Live progress bars** showing agent completion
-- **Streaming logs** for each agent
-- **Kill switch** to stop agents from dashboard
-- **Cost intelligence** (burn rate, projections, budget alerts)
+[Live Demo](https://agentwatch-dashboard.onrender.com) · [Documentation](https://clawsight.github.io) · [Report Bug](https://github.com/ClawSight/platform/issues)
 
 ---
 
-## 🚀 Quick Start
+### **The Problem**
+You built an agent. It runs on a loop in the cloud. 
+- Is it working? 
+- Did it just spend $50 on OpenAI API calls in 10 minutes?
+- Is it stuck in a `while(true)` loop apologizing to itself?
 
-### 1. Start the Backend
+You don't know because **`console.log` doesn't work in production.**
 
+### **The Solution**
+**ClawSight** is a lightweight dashboard that gives you:
+1.  **Real-time Logs:** Stream `stdout` from your agent to the web.
+2.  **Cost Tracking:** Watch token burn as it happens.
+3.  **Kill Switch:** Remotely terminate a rogue agent instantly.
+
+No complex observability stack. No Datadog. Just 3 lines of code.
+
+---
+
+### **Quick Start**
+
+#### 1. Install the SDK
 ```bash
-cd backend
-npm start
+npm install clawsight-client
 ```
 
-Backend runs on **http://localhost:8080**
-
-### 2. Open the Dashboard
-
-Open in your browser:
-```
-http://localhost:8080
-```
-
-Or serve the frontend separately:
-```bash
-cd frontend
-python3 -m http.server 3000
-# Then open http://localhost:3000
-```
-
-### 3. Use in Your Agents
-
+#### 2. Add to your Agent
 ```javascript
-const AgentWatch = require('./sdk/agentwatch');
+const monitor = require('clawsight-client');
 
-async function myAgent() {
-  const watcher = new AgentWatch({
-    task: 'Research micro-SaaS opportunities',
-    model: 'claude-3-sonnet'
-  });
-  
-  await watcher.start();
-  
-  watcher.log('Starting research...');
-  watcher.progress(25);
-  
-  // ... do work ...
-  
-  watcher.tokens(1500, 0.045); // 1500 tokens, $0.045
-  watcher.log('Found 10 opportunities');
-  watcher.progress(75);
-  
-  await watcher.end('complete');
-}
+// Connect to your dashboard
+const watcher = monitor({
+  server: 'https://your-dashboard-url.onrender.com',
+  token: 'YOUR_SECRET_KEY'
+});
+
+// Start logging
+watcher.log('Agent starting task: Research Uranium', 'working');
+watcher.metric('cost', 0.04); // Track spend
 ```
 
 ---
 
-## 📦 Project Structure
+### **Deployment (Self-Hosted)**
 
-```
-agentwatch-app/
-├── backend/
-│   ├── server.js           # WebSocket + REST API server
-│   └── package.json
-├── frontend/
-│   └── index.html          # Beautiful dashboard UI
-├── sdk/
-│   ├── agentwatch.js       # SDK for OpenClaw agents
-│   └── demo.js             # Example usage
-└── README.md               # You are here
-```
+ClawSight is open-source. Run your own dashboard on Render, Heroku, or Docker.
 
----
+**One-Click Deploy (Render):**
 
-## 🎨 Features
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ClawSight/platform)
 
-### Dashboard
-- **Dark theme** optimized for long monitoring sessions
-- **Real-time updates** via WebSocket (<100ms latency)
-- **Professional design** with gradients and smooth animations
-- **Cost intelligence** with burn rate calculations
-- **Agent cards** showing status, progress, logs, costs
-
-### SDK
-- **Simple API** - just 5 lines to integrate
-- **Auto-reconnect** if connection drops
-- **Kill command listener** - agents can respond to dashboard kills
-- **Heartbeat** to keep connections alive
-- **Error handling** built-in
-
-### Backend
-- **In-memory storage** (fast, no DB needed for MVP)
-- **WebSocket server** for real-time updates
-- **REST API** for historical data
-- **Logging** with Winston
-- **CORS enabled** for cross-origin requests
-
----
-
-## 📊 API Reference
-
-### SDK Methods
-
-```javascript
-const watcher = new AgentWatch(options);
-```
-
-**Options:**
-- `endpoint` - Backend URL (default: 'http://localhost:8080')
-- `agentId` - Unique ID (auto-generated if omitted)
-- `task` - Description of what agent is doing
-- `model` - AI model being used
-
-**Methods:**
-- `await watcher.start()` - Begin monitoring
-- `watcher.log(message, level)` - Log a message ('info', 'warning', 'error')
-- `watcher.tokens(count, costUSD)` - Report token usage
-- `watcher.progress(percent)` - Update progress (0-100)
-- `await watcher.end(status)` - End monitoring ('complete', 'failed', 'killed')
-- `await watcher.fail(error)` - Report failure
-
-**Events:**
-- `watcher.on('kill', handler)` - Listen for kill commands from dashboard
-
----
-
-## 🔧 Configuration
-
-### Backend Environment Variables
-
-Create `backend/.env`:
-```env
-PORT=8080
-FRONTEND_URL=http://localhost:3000
-```
-
-### Dashboard Config
-
-Edit `frontend/index.html` line ~150:
-```javascript
-const socket = io('http://localhost:8080');
-```
-
-Change URL if backend is on different host/port.
-
----
-
-## 🧪 Testing
-
-### Run Demo Agent
-
+**Manual Deploy:**
 ```bash
-cd sdk
-node demo.js
-```
+# Clone
+git clone https://github.com/ClawSight/platform.git
 
-This will:
-1. Connect to AgentWatch
-2. Simulate an agent doing research
-3. Show logs, progress, token usage
-4. Complete after ~10 seconds
+# Install
+cd platform/backend
+npm install
 
-Open dashboard to watch it live!
-
-### Manual Test
-
-```javascript
-const AgentWatch = require('./sdk/agentwatch');
-
-(async () => {
-  const w = new AgentWatch({ task: 'Test Agent' });
-  await w.start();
-  w.log('Hello from test agent!');
-  w.progress(50);
-  w.tokens(100, 0.003);
-  await w.end('complete');
-})();
+# Run
+export AGENTWATCH_API_KEY="secret-key-123"
+node server.js
 ```
 
 ---
 
-## 📈 Cost Tracking
+### **Architecture**
+*   **Frontend:** Vanilla JS + Tailwind (No build step, blazing fast).
+*   **Backend:** Node.js + Socket.io (Real-time websockets).
+*   **Storage:** In-memory (Default) / Redis (Optional).
 
-AgentWatch tracks:
-- **Per-agent costs** (tokens × model pricing)
-- **Total daily spend**
-- **Burn rate** ($/hour based on recent activity)
-- **Projections** (daily, monthly)
-
-**Model Pricing (built-in):**
-- GPT-4: $30/$60 per 1M tokens (input/output)
-- Claude Opus: $15/$75 per 1M tokens
-- Claude Sonnet: $3/$15 per 1M tokens
-- Gemini Pro: $3.50/$10.50 per 1M tokens
+### **Contributing**
+We are open to PRs. If you want to add generic LLM cost tracking or Slack alerts, open an issue.
 
 ---
 
-## 🎯 Use Cases
-
-### 1. Multi-Agent Orchestration
-Monitor 5+ agents running simultaneously, see which are stuck, which are expensive.
-
-### 2. Cost Control
-Get alerts when spend hits thresholds, auto-kill expensive agents.
-
-### 3. Debugging
-Stream logs in real-time, see exactly where agents fail.
-
-### 4. Performance Optimization
-Compare token usage across agents, optimize prompts.
-
----
-
-## 🚀 Deployment (Production)
-
-### Backend (Railway)
-```bash
-cd backend
-railway up
-```
-
-### Frontend (Vercel/Netlify)
-```bash
-cd frontend
-vercel --prod
-```
-
-Update WebSocket URL in `index.html` to point to production backend.
-
----
-
-## 🛠️ Roadmap
-
-**MVP (Done):**
-- ✅ Real-time monitoring
-- ✅ Cost tracking
-- ✅ Progress bars
-- ✅ Kill switch
-- ✅ Beautiful UI
-
-**Next:**
-- [ ] User authentication
-- [ ] PostgreSQL for persistent storage
-- [ ] Budget alerts (email/SMS)
-- [ ] Historical data & charts
-- [ ] Multi-user support
-- [ ] API webhooks
-
----
-
-## 🐛 Troubleshooting
-
-### "Cannot connect to backend"
-- Check backend is running: `curl http://localhost:8080/health`
-- Check CORS settings in `server.js`
-- Check firewall/network settings
-
-### "Agents not appearing"
-- Check WebSocket connection in browser console
-- Verify SDK is sending events: `socket.emit('agent:start', ...)`
-- Check backend logs for errors
-
-### "Cost calculations wrong"
-- Verify token counts are accurate
-- Check model pricing in SDK documentation
-- Ensure `watcher.tokens()` is called after each API request
-
----
-
-## 📝 License
-
-MIT - Built for the OpenClaw community
-
----
-
-## 🙏 Credits
-
-Built by: OpenClaw Agent  
-Date: February 23, 2026  
-Build time: ~3 hours  
-
-Inspired by the need to monitor multiple agents and avoid surprise API bills.
-
----
-
-**Ready to monitor your agents? Start the backend and open the dashboard! 🚀**
+**Built for the [OpenClaw](https://github.com/openclaw) ecosystem.**
