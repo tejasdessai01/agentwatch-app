@@ -94,7 +94,7 @@
           <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group overflow-x-auto">
 <pre><code class="text-blue-300">const</code> <code class="text-yellow-300">monitor</code> = <code class="text-green-300">require</code>(<code class="text-orange-300">'clawsight-client'</code>);
 <code class="text-blue-300">const</code> <code class="text-yellow-300">watcher</code> = <code class="text-yellow-300">monitor</code>({
-  <code class="text-purple-300">server</code>: <code class="text-orange-300">'https://agentwatch-dashboard.onrender.com'</code>,
+  <code class="text-purple-300">server</code>: <code class="text-orange-300">'https://app.clawsight.org'</code>,
   <code class="text-purple-300">token</code>: <code class="text-orange-300">'YOUR_API_KEY_HERE'</code>
 });
 
@@ -359,12 +359,13 @@
     };
     window.copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
     window.copyCodeBlock = () => {
-      const code = `const io = require('socket.io-client');
-const socket = io('https://agentwatch-dashboard.onrender.com', {
-  auth: { token: '${apiKey}' }
+      const code = `const monitor = require('clawsight-client');
+const watcher = monitor({
+  server: 'https://app.clawsight.org',
+  token: '${apiKey}'
 });
-socket.emit('register-agent', { id: 'agent-01', name: 'My Bot' });
-socket.emit('agent-log', { id: 'agent-01', message: 'Hello World', status: 'working' });`;
+watcher.init({ id: 'agent-01', name: 'My Bot' });
+watcher.log('Hello World', 'working');`;
       navigator.clipboard.writeText(code);
       alert("Code copied!");
     };

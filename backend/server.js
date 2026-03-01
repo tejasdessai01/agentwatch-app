@@ -16,10 +16,10 @@ const io = new Server(server, {
 
 let activeAgents = {};
 let sharedSessions = {}; 
-const API_KEY = process.env.AGENTWATCH_API_KEY || "test-key-123"; 
+const API_KEY = process.env.CLAWSIGHT_API_KEY || process.env.AGENTWATCH_API_KEY || "test-key-123"; 
 
 console.log("🔒 ClawSight Server Starting...");
-console.log(`🔑 Master API Key: ${API_KEY}`);
+// console.log(`🔑 Master API Key: ${API_KEY}`); // Redacted for security
 
 // --- API ---
 app.post('/api/share', (req, res) => {

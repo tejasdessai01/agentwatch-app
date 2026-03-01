@@ -3,7 +3,7 @@ const io = require('socket.io-client');
 /**
  * Connect to ClawSight Dashboard
  * @param {Object} config - Configuration object
- * @param {string} config.server - URL of your dashboard (e.g. 'https://agentwatch-dashboard.onrender.com')
+ * @param {string} config.server - URL of your dashboard (e.g. 'https://app.clawsight.org')
  * @param {string} config.token - API Key from dashboard settings
  * @returns {Object} Watcher instance
  */
@@ -27,7 +27,7 @@ module.exports = function ClawSight(config) {
   });
 
   socket.on('connect', () => {
-    // Register agent on connect
+    console.log(`✅ ClawSight Connected: ${name}`);
     if (name && id) {
       socket.emit('register-agent', { 
         id, 
@@ -39,6 +39,10 @@ module.exports = function ClawSight(config) {
     }
   });
 
+  socket.on('connect_error', (err) => {
+    console.error(`❌ ClawSight Error: ${name} failed to connect. ${err.message}`);
+  });
+
   socket.on('kill-signal', (targetId) => {
     if (targetId === id) {
       console.error(`💀 ClawSight: KILL SIGNAL RECEIVED for agent ${id}. Terminating process immediately.`);
@@ -47,28 +51,14 @@ module.exports = function ClawSight(config) {
   });
 
   return {
-    /**
-     * Log a message to the dashboard
-     * @param {string} message - Text to log
-     * @param {string} [status='working'] - Status ('working', 'success', 'error', 'idle')
-     */
     log: (message, status = 'working') => {
       socket.emit('agent-log', { id, message, status });
     },
     
-    /**
-     * Update a metric value
-     * @param {string} key - Metric name (e.g. 'cost', 'tokens')
-     * @param {number} value - New value
-     */
     metric: (key, value) => {
       socket.emit('agent-log', { id, metrics: { [key]: value } });
     },
     
-    /**
-     * Set agent status
-     * @param {string} status - New status ('working', 'idle', 'error')
-     */
     status: (status) => {
       socket.emit('agent-log', { id, status });
     }
