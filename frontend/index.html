@@ -17,7 +17,7 @@
   <!-- Header -->
   <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center shadow-md z-10">
     <div class="flex items-center gap-4">
-      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v2.1</h1>
+      <h1 class="text-2xl font-bold text-emerald-400 tracking-wider">AGENTWATCH v2.2</h1>
       <span id="connection-status" class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded border border-gray-700">Connecting...</span>
     </div>
     <div class="flex gap-4 text-sm">
@@ -48,7 +48,7 @@
   </div>
 
   <!-- Main Content Area -->
-  <main class="flex-1 overflow-y-auto p-6 relative pb-20"> <!-- Added pb-20 for footer spacing -->
+  <main class="flex-1 overflow-y-auto p-6 relative pb-20">
     
     <!-- DASHBOARD TAB -->
     <div id="view-dashboard" class="block h-full">
@@ -79,13 +79,65 @@
     <!-- SETUP TAB -->
     <div id="view-setup" class="hidden max-w-4xl mx-auto">
       <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 shadow-xl">
-        <!-- Setup Guide Content (Same as before) -->
         <h2 class="text-3xl font-bold text-white mb-6">Quick Start Guide</h2>
-        <div class="mb-8"><h3 class="text-lg font-bold text-emerald-400 mb-2">1. Install</h3><div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm"><code class="text-green-400">npm install socket.io-client uuid</code></div></div>
-        <div class="mb-8"><h3 class="text-lg font-bold text-emerald-400 mb-2">2. Your API Key</h3><div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm break-all"><span id="display-api-key" class="text-yellow-400">Loading...</span></div></div>
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">1. Install the SDK</h3>
+          <p class="text-gray-400 mb-3">Run this in your agent's project folder:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group">
+            <code class="text-green-400">npm install socket.io-client uuid</code>
+            <button onclick="copyToClipboard('npm install socket.io-client uuid')" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+          </div>
+        </div>
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">2. Add to Your Agent</h3>
+          <p class="text-gray-400 mb-3">Copy this code into your agent's main file:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm relative group overflow-x-auto">
+<pre><code class="text-blue-300">const</code> <code class="text-yellow-300">io</code> = <code class="text-green-300">require</code>(<code class="text-orange-300">'socket.io-client'</code>);
+<code class="text-blue-300">const</code> <code class="text-yellow-300">socket</code> = <code class="text-yellow-300">io</code>(<code class="text-orange-300">'https://agentwatch-dashboard.onrender.com'</code>, {
+  <code class="text-purple-300">auth</code>: { <code class="text-purple-300">token</code>: <code class="text-orange-300">'YOUR_API_KEY_HERE'</code> }
+});
+
+<code class="text-gray-500">// Register Agent</code>
+<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'register-agent'</code>, {
+  <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
+  <code class="text-purple-300">name</code>: <code class="text-orange-300">'Production Bot'</code>,
+  <code class="text-purple-300">status</code>: <code class="text-orange-300">'idle'</code>
+});
+
+<code class="text-gray-500">// Send Logs & Metrics</code>
+<code class="text-yellow-300">socket</code>.<code class="text-yellow-300">emit</code>(<code class="text-orange-300">'agent-log'</code>, {
+  <code class="text-purple-300">id</code>: <code class="text-orange-300">'my-agent-01'</code>,
+  <code class="text-purple-300">message</code>: <code class="text-orange-300">'Task started...'</code>,
+  <code class="text-purple-300">status</code>: <code class="text-orange-300">'working'</code>,
+  <code class="text-purple-300">metrics</code>: { <code class="text-purple-300">cost</code>: 0.05, <code class="text-purple-300">tokens</code>: 1200 }
+});</code></pre>
+            <button onclick="copyCodeBlock()" class="absolute right-4 top-4 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+          </div>
+        </div>
+        <div class="mb-8">
+          <h3 class="text-lg font-bold text-emerald-400 mb-2">3. Your API Key</h3>
+          <p class="text-gray-400 mb-3">Use this key to authenticate your agents:</p>
+          <div class="bg-black p-4 rounded border border-gray-700 font-mono text-sm break-all">
+            <span id="display-api-key" class="text-yellow-400">Not set (Check Settings)</span>
+          </div>
+        </div>
       </div>
     </div>
   </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 border-t border-gray-800 p-4 text-center text-xs text-gray-600 fixed bottom-0 w-full z-10">
+    <div class="flex justify-center gap-6 mb-2">
+      <a href="#" onclick="showTab('setup')" class="hover:text-emerald-400 transition-colors">Documentation</a>
+      <a href="https://github.com/tejasdessai01/agentwatch-app" target="_blank" class="hover:text-emerald-400 transition-colors">GitHub</a>
+      <span class="text-gray-700">|</span>
+      <span class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        System Online
+      </span>
+    </div>
+    <p>&copy; 2026 AgentWatch Inc. All systems nominal.</p>
+  </footer>
 
   <script>
     // --- APP LOGIC ---
@@ -209,13 +261,9 @@
           <div class="flex-1 bg-black p-4 overflow-y-auto scrollbar-thin">
             ${logsHtml || '<div class="text-gray-600 text-sm italic">Waiting for logs...</div>'}
           </div>
-        <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
-          <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">${agent.status}</span>
-          ${agent.status !== 'killed' ? 
-            `<button onclick="killAgent('${agent.id}')" class="bg-red-900/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-colors">KILL</button>` : 
-            `<span class="text-red-500 text-xs font-bold">TERMINATED</span>`
-          }
-        </div>
+          <div class="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
+             <button onclick="killAgent('${agent.id}')" class="bg-red-900/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-colors">KILL</button>
+          </div>
         `;
       }
     }
@@ -272,6 +320,16 @@
     window.logout = () => { localStorage.removeItem('agentwatch_api_key'); window.location.reload(); };
     window.killAgent = (id) => { if (confirm(`Terminate agent ${id}?`)) socket.emit('kill-agent', id); };
     window.copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
+    window.copyCodeBlock = () => {
+      const code = `const io = require('socket.io-client');
+const socket = io('https://agentwatch-dashboard.onrender.com', {
+  auth: { token: '${apiKey}' }
+});
+socket.emit('register-agent', { id: 'agent-01', name: 'My Bot' });
+socket.emit('agent-log', { id: 'agent-01', message: 'Hello World', status: 'working' });`;
+      navigator.clipboard.writeText(code);
+      alert("Code copied!");
+    };
   </script>
 </body>
 </html>
