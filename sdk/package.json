@@ -1,5 +1,5 @@
 {
-  "name": "clawsight-client",
+  "name": "clawsight",
   "version": "1.0.0",
   "description": "Official Client SDK for ClawSight - Mission Control for AI Agents.",
   "main": "index.js",
