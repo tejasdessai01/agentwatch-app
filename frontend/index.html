@@ -164,24 +164,24 @@
     let agents = {};
     let apiKey = localStorage.getItem('clawsight_api_key');
 
+    // Handle Redirects First
     if (window.location.hash.includes('access_token=')) {
       window.location.replace(`/keys.html${window.location.hash}`);
-      return;
-    }
-
-    if (!apiKey) {
+    } else if (!apiKey) {
       window.location.replace('/keys.html?needKey=1');
-      return;
     }
 
+    // Modal Logic
     const modalEl = document.getElementById('key-modal');
     const keyInput = document.getElementById('api-key-input');
     const errorEl = document.getElementById('key-modal-error');
 
-    if (!apiKey) {
-      openKeyModal();
-    } else {
+    // Only init if we have a key (and aren't redirecting)
+    if (apiKey) {
       initSocket();
+    } else {
+      // Allow modal usage if redirect failed or just in case
+      // openKeyModal(); // Actually, we redirected above, so this is fallback.
     }
 
     setApiKeyDisplay();
@@ -384,4 +384,62 @@
       
       if (hasAgents) {
         document.getElementById('empty-state').classList.add('hidden');
-        document.getauga...
+        document.getElementById('analytics-bar').classList.remove('hidden');
+        document.getElementById('label-active').classList.remove('hidden');
+      }
+      
+      if (deadCount > 0) historySection.classList.remove('hidden');
+      else historySection.classList.add('hidden');
+    }
+
+    function renderAllAgents() {
+      document.getElementById('agent-grid').innerHTML = '';
+      document.getElementById('agent-grid-history').innerHTML = '';
+      Object.values(agents).forEach(updateOrMoveCard);
+      updateGlobalStats();
+    }
+
+    // Helper functions
+    window.showTab = (tabName) => {
+      ['dashboard', 'setup'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('text-emerald-400', 'border-b-2', 'border-emerald-400');
+        document.getElementById(`tab-${t}`).classList.add('text-gray-400');
+      });
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabName}`).classList.add('text-emerald-400', 'border-b-2', 'border-emerald-400');
+      document.getElementById(`tab-${tabName}`).classList.remove('text-gray-400');
+    };
+    window.logout = () => { localStorage.removeItem('clawsight_api_key'); window.location.reload(); };
+    window.killAgent = (id) => { if (confirm(`Terminate agent ${id}?`)) socket.emit('kill-agent', id); };
+    window.shareAgent = (id) => {
+      fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: id })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          navigator.clipboard.writeText(data.url);
+          alert('Shareable link copied to clipboard!');
+        } else {
+          alert('Failed to generate share link.');
+        }
+      });
+    };
+    window.copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
+    window.copyCodeBlock = () => {
+      const code = `const monitor = require('clawsight');
+const watcher = monitor({
+  server: 'https://app.clawsight.org',
+  token: '${apiKey}'
+});
+watcher.init({ id: 'agent-01', name: 'My Bot' });
+watcher.log('Hello World', 'working');`;
+      navigator.clipboard.writeText(code);
+      alert("Code copied!");
+    };
+  </script>
+</body>
+</html>
