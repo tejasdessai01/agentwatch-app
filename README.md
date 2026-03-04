@@ -1,86 +1,97 @@
-# ClawSight 🦅
+# ClawSight 🦅 — Mission Control for Autonomous Agents
 
-**Mission Control for Autonomous Agents.**
+**Open-source dashboard for real-time agent observability.** See every thought, token, and dollar your bots burn — kill loops instantly, share read-only sessions, and keep multiple tenants safe.
 
-[Live Demo](https://app.clawsight.org) · [Documentation](https://github.com/ClawSight/platform#readme) · [Report Bug](https://github.com/ClawSight/platform/issues)
-
----
-
-### **The Problem**
-You built an agent. It runs on a loop in the cloud. 
-- Is it working? 
-- Did it just spend $50 on OpenAI API calls in 10 minutes?
-- Is it stuck in a `while(true)` loop apologizing to itself?
-
-You don't know because **`console.log` doesn't work in production.**
-
-### **The Solution**
-**ClawSight** is a lightweight dashboard that gives you:
-1.  **Real-time Logs:** Stream `stdout` from your agent to the web.
-2.  **Cost Tracking:** Watch token burn as it happens.
-3.  **Kill Switch:** Remotely terminate a rogue agent instantly.
-
-No complex observability stack. No Datadog. Just 3 lines of code.
+<p align="center">
+  <img src="docs/screenshot-dashboard.png" alt="ClawSight dashboard" width="800"/>
+</p>
 
 ---
 
-### **Quick Start**
+## Why ClawSight?
+| Problem | ClawSight Answer |
+| --- | --- |
+| Agents run headless in the cloud — you have zero visibility. | Live-stream every log/status update to a web UI. |
+| API/token bills spike before you notice. | Real-time cost + token tracking per agent and globally. |
+| Rogue loops require SSH + guesswork. | One-click **KILL** button with confirmation + audit log. |
+| Sharing/debugging is painful. | Generate read-only “👀 Share Links” for teammates/customers. |
+| Multi-tenant SaaS needs isolation. | Supabase auth + scoped API keys + tenant-aware sockets. |
 
-#### 1. Install the SDK
+## Feature Highlights
+- **Supabase Magic Link auth** → `/keys` onboarding with per-user `ck_live_…` keys.
+- **Multi-tenant sockets** with hashed API keys + rate limits.
+- **Demo tenant** auto-seeded so new users see value immediately.
+- **Cost / token analytics** across agents + global P&L.
+- **Kill + Share controls** on every card.
+- **Deploy anywhere** (Render button, Docker, self-host).
+
+---
+
+## Quick Start
 ```bash
+# 1) Install SDK (publish coming — see below)
 npm install clawsight
-```
 
-#### 2. Add to your Agent
-```javascript
-const monitor = require('clawsight');
-
-// Connect to your dashboard
-const watcher = monitor({
+# 2) Import + connect
+const clawsight = require('clawsight');
+const watcher = clawsight({
   server: 'https://app.clawsight.org',
-  token: 'YOUR_SECRET_KEY'
+  token: 'ck_live_...',
+  id: 'trader-bot-01',
+  name: 'Trader Bot'
 });
-
-// Start logging
-watcher.log('Agent starting task: Research Uranium', 'working');
-watcher.metric('cost', 0.04); // Track spend
+watcher.log('Starting trade loop', 'working');
+watcher.metric('cost', 0.02);
 ```
+
+### First-run onboarding
+1. Visit **https://app.clawsight.org/login.html** → enter email → click magic link.
+2. `/keys.html` opens automatically → **Create Key** → copy `ck_live_…` value.
+3. Paste key into dashboard modal + your agents.
+4. If you have no agents yet, the **Demo Revenue Bot** appears so you can explore immediately.
 
 ---
 
-### **Deployment (Self-Hosted)**
+## Deploy Your Own
+| Target | One-liner |
+| --- | --- |
+| Render (free) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ClawSight/platform) |
+| Local dev | `cd agentwatch-app/backend && npm install && CLAWSIGHT_API_KEY=test node server.js` |
+| Docker (coming) | `docker compose up` |
 
-ClawSight is open-source. Run your own dashboard on Render, Heroku, or Docker.
+Env vars:
+```
+CLAWSIGHT_API_KEY=master-key-for-bootstrap
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+``` 
 
-**One-Click Deploy (Render):**
+---
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ClawSight/platform)
+## Roadmap / Help Wanted
+- [ ] LangChain & AutoGPT adapters
+- [ ] Slack / Discord alert hooks
+- [ ] Token cost auto-detection per provider
+- [ ] Docker Compose file
+Jump into **Discussions → Show & Tell** or open issues labeled `help wanted`.
 
-**Manual Deploy:**
+---
+
+## Publish checklist (owner action)
+We renamed everything to `clawsight`, but the npm package isn’t live yet. To publish:
 ```bash
-# Clone
-git clone https://github.com/ClawSight/platform.git
-
-# Install
-cd platform/backend
-npm install
-
-# Run
-export CLAWSIGHT_API_KEY="secret-key-123"
-node server.js
+cd agentwatch-app/sdk
+npm version 1.0.0
+npm publish --access public
 ```
+After that, update this README badge + examples if version changes.
 
 ---
 
-### **Architecture**
-*   **Frontend:** Vanilla JS + Tailwind (No build step, blazing fast).
-*   **Backend:** Node.js + Socket.io (Real-time websockets).
-*   **Storage:** In-memory (Default) / Redis (Optional).
+## Status & Links
+- **Dashboard:** https://app.clawsight.org
+- **Landing:** https://www.clawsight.org
+- **Docs:** https://github.com/ClawSight/platform#readme
+- **Issues / Feedback:** https://github.com/ClawSight/platform/issues
 
-### **Contributing**
-We are open to PRs. If you want to add generic LLM cost tracking or Slack alerts, open an issue.
-
----
-
-**Built for the [OpenClaw](https://github.com/openclaw) ecosystem.**
- 
+Built for the OpenClaw ecosystem. Contributions welcome.
