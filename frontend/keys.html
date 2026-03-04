@@ -54,13 +54,14 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const needKeyBanner = document.getElementById('need-key-banner');
     let latestKey = null;
+    const loggedInViaMagicLink = window.location.hash.includes('access_token=');
 
     if (new URLSearchParams(window.location.search).get('needKey')) {
       needKeyBanner.classList.remove('hidden');
     }
 
     async function handleMagicLink() {
-      if (window.location.hash.includes('access_token=')) {
+      if (loggedInViaMagicLink) {
         const params = new URLSearchParams(window.location.hash.substring(1));
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
@@ -71,9 +72,29 @@
       }
     }
 
+    async function provisionDashboardKey(token) {
+      const res = await fetch('/api/dashboard-key', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.key) {
+        localStorage.setItem('clawsight_api_key', data.key);
+      }
+    }
+
     async function checkAuth() {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) window.location.href = '/login.html';
+      if (!session) {
+        window.location.href = '/login.html';
+        return;
+      }
+      if (loggedInViaMagicLink) {
+        await provisionDashboardKey(session.access_token);
+        window.location.replace('/');
+        return;
+      }
       loadKeys(session.access_token);
     }
 

@@ -125,6 +125,42 @@ app.delete('/api/keys/:id', async (req, res) => {
 });
 
 
+
+// Dashboard Session Key (auto provision after login)
+app.post('/api/dashboard-key', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "Missing Auth" });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return res.status(401).json({ error: "Invalid User" });
+
+  const { data: userTenant } = await supabase.from('user_tenants').select('tenant_id').eq('user_id', user.id).single();
+  if (!userTenant) return res.status(400).json({ error: "No Tenant Found" });
+
+  // Remove prior dashboard keys for cleanliness
+  await supabase.from('api_keys')
+    .delete()
+    .eq('tenant_id', userTenant.tenant_id)
+    .eq('name', 'Dashboard Session Key');
+
+  const rawKey = 'ck_live_' + uuidv4().replace(/-/g, '');
+  const keyHash = await argon2.hash(rawKey);
+  const keyPrefix = rawKey.slice(0, 12);
+
+  const { error: insertError } = await supabase.from('api_keys').insert({
+    tenant_id: userTenant.tenant_id,
+    key_hash: keyHash,
+    key_prefix: keyPrefix,
+    name: 'Dashboard Session Key',
+    created_by: user.id
+  });
+
+  if (insertError) return res.status(500).json({ error: insertError.message });
+
+  res.json({ key: rawKey });
+});
+
 // --- REALTIME SOCKETS ---
 
 io.use(async (socket, next) => {
