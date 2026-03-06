@@ -165,17 +165,16 @@
       let agents = {};
       let apiKey = localStorage.getItem('clawsight_api_key');
 
-      if (!apiKey) {
-        window.location.replace('/keys.html?needKey=1');
-        return;
+      // Auto-provisioning now happens on /keys during login, so just attempt to connect.
+      if (apiKey) {
+        initSocket();
+      } else {
+        const statusEl = document.getElementById('connection-status');
+        if (statusEl) {
+          statusEl.textContent = 'No API key stored. Visit /keys to create one.';
+          statusEl.className = 'text-xs text-yellow-400 bg-gray-900 px-2 py-1 rounded border border-yellow-600';
+        }
       }
-
-      if (window.location.hash.includes('access_token=')) {
-        window.location.replace(`/keys.html${window.location.hash}`);
-        return;
-      }
-
-      initSocket();
 
     keyInput?.addEventListener('keydown', (evt) => {
       if (evt.key === 'Enter') saveApiKey();
@@ -202,7 +201,6 @@
       setApiKeyDisplay();
       closeKeyModal();
       initSocket();
-      window.location.replace('/');
     }
 
     function setApiKeyDisplay() {
