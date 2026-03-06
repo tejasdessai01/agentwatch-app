@@ -119,6 +119,17 @@ app.post('/api/keys', async (req, res) => {
   res.json({ key: rawKey, name: req.body.name });
 });
 
+// --- DEBUG ENDPOINT (Temporary) ---
+app.get('/api/debug/state', (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== 'debug-123') return res.status(403).send('Forbidden');
+  
+  res.json({
+    activeAgents: activeAgents,
+    count: Object.keys(activeAgents).length
+  });
+});
+
 // List Keys
 app.get('/api/keys', async (req, res) => {
   const authHeader = req.headers.authorization;
