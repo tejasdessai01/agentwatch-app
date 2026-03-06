@@ -150,6 +150,7 @@
     <div class="flex justify-center gap-6 mb-2">
       <a href="https://github.com/ClawSight/platform#readme" target="_blank" class="hover:text-emerald-400 transition-colors">Documentation</a>
       <a href="https://github.com/ClawSight/platform" target="_blank" class="hover:text-emerald-400 transition-colors">GitHub</a>
+      <button onclick="changeKey()" class="hover:text-emerald-400 transition-colors uppercase">Switch Key</button>
       <span class="text-gray-700">|</span>
       <span class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -546,6 +547,13 @@ watcher.init({ id: 'agent-01', name: 'My Bot' });
 watcher.log('Hello World', 'working');`;
       navigator.clipboard.writeText(code);
       alert("Code copied!");
+    };
+    window.changeKey = () => {
+      const newKey = prompt("Enter API Key to Monitor:", apiKey || "");
+      if (newKey && newKey.trim() !== "") {
+        localStorage.setItem('clawsight_api_key', newKey.trim());
+        window.location.reload();
+      }
     };
     })();
   </script>
