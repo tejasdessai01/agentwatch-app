@@ -45,9 +45,9 @@ watcher.metric('cost', 0.02);
 ```
 
 ### First-run onboarding
-1. Visit **https://app.clawsight.org/login.html** → enter email → click magic link.
-2. `/keys.html` opens automatically → **Create Key** → copy `ck_live_…` value.
-3. Paste key into dashboard modal + your agents.
+1. Visit **https://app.clawsight.org** → redirected to login → enter email → click magic link.
+2. Dashboard opens automatically with a session key provisioned — **new users** see the Setup Guide first.
+3. Go to `/keys.html` to create agent keys (`ck_live_…`) for your bots.
 4. If you have no agents yet, the **Demo Revenue Bot** appears so you can explore immediately.
 
 ---
